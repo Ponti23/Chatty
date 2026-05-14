@@ -1,4 +1,5 @@
 # tests/api/test_auth_api.py
+import uuid
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
@@ -17,10 +18,11 @@ async def client():
 
 @pytest.mark.asyncio
 async def test_register_creates_user_and_returns_token(client, db_session):
+    email = f"admin-{uuid.uuid4()}@acme.com"
     resp = await client.post("/api/v1/auth/register", json={
-        "email": "admin@acme.com",
+        "email": email,
         "password": "Password123!",
-        "tenant_name": "Acme Corp"
+        "tenant_name": f"Acme-{uuid.uuid4()}"
     })
     assert resp.status_code == 201
     body = resp.json()
@@ -30,13 +32,14 @@ async def test_register_creates_user_and_returns_token(client, db_session):
 
 @pytest.mark.asyncio
 async def test_login_returns_token(client, db_session):
+    email = f"user-{uuid.uuid4()}@acme.com"
     await client.post("/api/v1/auth/register", json={
-        "email": "user@acme.com",
+        "email": email,
         "password": "Password123!",
-        "tenant_name": "Acme Corp2"
+        "tenant_name": f"Acme-{uuid.uuid4()}"
     })
     resp = await client.post("/api/v1/auth/login", data={
-        "username": "user@acme.com",
+        "username": email,
         "password": "Password123!"
     })
     assert resp.status_code == 200
@@ -45,13 +48,14 @@ async def test_login_returns_token(client, db_session):
 
 @pytest.mark.asyncio
 async def test_login_wrong_password_returns_401(client, db_session):
+    email = f"other-{uuid.uuid4()}@acme.com"
     await client.post("/api/v1/auth/register", json={
-        "email": "other@acme.com",
+        "email": email,
         "password": "Password123!",
-        "tenant_name": "Acme Corp3"
+        "tenant_name": f"Acme-{uuid.uuid4()}"
     })
     resp = await client.post("/api/v1/auth/login", data={
-        "username": "other@acme.com",
+        "username": email,
         "password": "WrongPassword"
     })
     assert resp.status_code == 401
