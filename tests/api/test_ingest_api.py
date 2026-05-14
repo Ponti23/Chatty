@@ -69,3 +69,43 @@ async def test_ingest_missing_tenant_header_returns_422(client):
             files={"file": ("sample.pdf", f, "application/pdf")},
         )
     assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_delete_source_returns_204(client):
+    with open("tests/fixtures/sample.pdf", "rb") as f:
+        post_resp = await client.post(
+            "/api/v1/sources",
+            files={"file": ("sample.pdf", f, "application/pdf")},
+            headers={"X-Tenant-ID": TENANT_ID},
+        )
+    assert post_resp.status_code == 201
+    source_id = post_resp.json()["source_id"]
+
+    resp = await client.delete(
+        f"/api/v1/sources/{source_id}",
+        headers={"X-Tenant-ID": TENANT_ID},
+    )
+    assert resp.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_delete_calls_vector_store_and_storage(client):
+    from app.main import app as fastapi_app
+
+    with open("tests/fixtures/sample.pdf", "rb") as f:
+        post_resp = await client.post(
+            "/api/v1/sources",
+            files={"file": ("sample.pdf", f, "application/pdf")},
+            headers={"X-Tenant-ID": TENANT_ID},
+        )
+    assert post_resp.status_code == 201
+    source_id = post_resp.json()["source_id"]
+
+    resp = await client.delete(
+        f"/api/v1/sources/{source_id}",
+        headers={"X-Tenant-ID": TENANT_ID},
+    )
+    assert resp.status_code == 204
+    fastapi_app.state.vector_store.delete_by_source.assert_called_with(TENANT_ID, source_id)
+    fastapi_app.state.storage.delete.assert_called_once()

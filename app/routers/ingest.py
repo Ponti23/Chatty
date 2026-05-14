@@ -73,3 +73,24 @@ async def ingest_source(
     except Exception as exc:
         await repo.update_status(source_id, "failed", error_message=str(exc))
         raise HTTPException(status_code=422, detail=str(exc))
+
+
+@router.delete("/sources/{source_id}", status_code=204)
+async def delete_source(
+    source_id: str,
+    request: Request,
+    x_tenant_id: str = Header(...),
+    db: AsyncSession = Depends(get_db),
+):
+    vector_store = request.app.state.vector_store
+    storage = request.app.state.storage
+    repo = SourceRepository(db)
+
+    sources = await repo.get_by_tenant(x_tenant_id)
+    source = next((s for s in sources if str(s.source_id) == source_id), None)
+    if source is None:
+        raise HTTPException(status_code=404, detail="Source not found")
+
+    vector_store.delete_by_source(x_tenant_id, source_id)
+    storage.delete(x_tenant_id, source_id, source.filename)
+    await repo.delete(source_id)
