@@ -18,13 +18,14 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS conversations (
     conversation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id       UUID NOT NULL,
+    tenant_id       UUID NOT NULL REFERENCES tenants(tenant_id) ON DELETE CASCADE,
     user_id         UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     title           TEXT NOT NULL DEFAULT 'New conversation',
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations (user_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_tenant ON conversations (tenant_id);
 
 CREATE TABLE IF NOT EXISTS messages (
     message_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
