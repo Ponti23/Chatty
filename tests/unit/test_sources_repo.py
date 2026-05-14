@@ -66,3 +66,10 @@ async def test_delete_source(db_session):
 
     results = await repo.get_by_tenant(TENANT_A)
     assert not any(str(s.source_id) == source_id for s in results)
+
+
+@pytest.mark.asyncio
+async def test_update_status_raises_for_missing_source(db_session):
+    repo = SourceRepository(db_session)
+    with pytest.raises(ValueError, match="not found"):
+        await repo.update_status(str(uuid.uuid4()), "indexed", chunk_count=1)

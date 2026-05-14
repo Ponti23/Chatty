@@ -28,12 +28,19 @@ class SourceRepository:
         chunk_count: int | None = None,
         error_message: str | None = None,
     ) -> Source:
-        stmt = update(Source).where(Source.source_id == uuid.UUID(source_id)).values(
-            status=status, chunk_count=chunk_count, error_message=error_message
-        )
+        values: dict = {"status": status}
+        if chunk_count is not None:
+            values["chunk_count"] = chunk_count
+        if error_message is not None:
+            values["error_message"] = error_message
+
+        stmt = update(Source).where(Source.source_id == uuid.UUID(source_id)).values(**values)
         await self.session.execute(stmt)
         await self.session.commit()
-        return await self.session.get(Source, uuid.UUID(source_id))
+        source = await self.session.get(Source, uuid.UUID(source_id))
+        if source is None:
+            raise ValueError(f"Source {source_id} not found")
+        return source
 
     async def get_by_tenant(self, tenant_id: str) -> list[Source]:
         result = await self.session.execute(
