@@ -6,6 +6,7 @@ from app.vector_store import VectorStoreClient
 from app.storage import StorageClient
 from app.routers import ingest
 from app.routers import auth as auth_router
+from app.routers import chat as chat_router
 
 
 @asynccontextmanager
@@ -28,3 +29,4 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Knowledge Base Ingestion Service", lifespan=lifespan)
 app.include_router(ingest.router, prefix="/api/v1")
 app.include_router(auth_router.router, prefix="/api/v1")
+app.include_router(chat_router.router, prefix="/api/v1")
