@@ -16,7 +16,7 @@ VECTOR_SIZE = 768
 
 class VectorStoreClient:
     def __init__(self, host: str, port: int):
-        self._client = QdrantClient(host=host, port=port, check_compatibility=False)
+        self._client = QdrantClient(host=host, port=port)
 
     def ensure_collection(self) -> None:
         existing = {c.name for c in self._client.get_collections().collections}
