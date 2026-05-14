@@ -7,8 +7,10 @@ def test_pdf_parser_registered():
 
 
 def test_parse_pdf_returns_text_segments():
+    import pathlib
     parser = get_parser("pdf")
-    with open("tests/fixtures/sample.pdf", "rb") as f:
+    fixture = pathlib.Path(__file__).parent.parent / "fixtures" / "sample.pdf"
+    with open(fixture, "rb") as f:
         content = f.read()
     segments = parser(content)
     assert isinstance(segments, list)
