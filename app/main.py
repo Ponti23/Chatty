@@ -1,11 +1,14 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+import os
 from app.config import settings
 from app.embeddings import EmbeddingService
 from app.vector_store import VectorStoreClient
 from app.storage import StorageClient
 from app.routers import ingest
 from app.routers import auth as auth_router
+from app.routers import tenants as tenants_router
 from app.routers import chat as chat_router
 
 
@@ -26,7 +29,13 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Knowledge Base Ingestion Service", lifespan=lifespan)
+app = FastAPI(title="Chatbot Platform API", lifespan=lifespan)
 app.include_router(ingest.router, prefix="/api/v1")
 app.include_router(auth_router.router, prefix="/api/v1")
+app.include_router(tenants_router.router, prefix="/api/v1")
 app.include_router(chat_router.router, prefix="/api/v1")
+
+# Serve frontend static files if built dist exists
+_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+if os.path.isdir(_dist):
+    app.mount("/", StaticFiles(directory=_dist, html=True), name="static")
