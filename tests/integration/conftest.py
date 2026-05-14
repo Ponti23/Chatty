@@ -1,3 +1,4 @@
+import uuid
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
@@ -48,6 +49,23 @@ def override_app_db():
 async def real_client():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
+
+
+@pytest_asyncio.fixture
+async def auth_headers(real_client: AsyncClient):
+    """Register a fresh user and return JWT auth headers for the integration tests."""
+    unique = uuid.uuid4().hex[:8]
+    email = f"inttest_{unique}@example.com"
+    password = "TestPass123!"
+    tenant_name = f"Integration Tenant {unique}"
+
+    resp = await real_client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": password, "tenant_name": tenant_name},
+    )
+    assert resp.status_code == 201, f"Registration failed: {resp.text}"
+    token = resp.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture
