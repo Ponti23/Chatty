@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -26,6 +27,8 @@ async def lifespan(app: FastAPI):
         settings.minio_bucket,
     )
     app.state.storage.ensure_bucket()
+    if settings.jwt_secret_key == "changeme-in-production":
+        logging.warning("JWT_SECRET_KEY is using the insecure default. Set a strong secret in .env before production use.")
     yield
 
 

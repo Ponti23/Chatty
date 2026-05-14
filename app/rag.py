@@ -38,6 +38,7 @@ async def stream_answer(
 
     async with httpx.AsyncClient(timeout=120.0) as client:
         async with client.stream("POST", f"{ollama_base_url}/api/chat", json=payload) as response:
+            response.raise_for_status()
             async for line in response.aiter_lines():
                 if not line:
                     continue

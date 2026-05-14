@@ -1,7 +1,8 @@
 import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.auth import hash_password, verify_password, create_access_token
@@ -15,6 +16,20 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     tenant_name: str
+
+    @field_validator("email")
+    @classmethod
+    def email_must_contain_at(cls, v: str) -> str:
+        if "@" not in v or "." not in v.split("@")[-1]:
+            raise ValueError("Invalid email format")
+        return v.lower().strip()
+
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
 
 
 def _slugify(name: str) -> str:
@@ -31,7 +46,11 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=409, detail="Email already registered")
 
     slug = _slugify(body.tenant_name)
-    tenant = await tenant_repo.create(body.tenant_name, slug)
+    try:
+        tenant = await tenant_repo.create(body.tenant_name, slug)
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="A tenant with this company name already exists")
     user = await user_repo.create(
         email=body.email,
         hashed_password=hash_password(body.password),
