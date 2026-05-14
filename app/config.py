@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     max_file_size_mb: int = 50
     default_chunk_quota: int = 10000
     request_timeout_seconds: int = 60
+    jwt_secret_key: str = "changeme-in-production"
+    access_token_expire_minutes: int = 60
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama3.2"
 
 
 settings = Settings()
