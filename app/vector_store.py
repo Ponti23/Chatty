@@ -16,7 +16,7 @@ VECTOR_SIZE = 768
 
 class VectorStoreClient:
     def __init__(self, host: str, port: int):
-        self._client = QdrantClient(host=host, port=port)
+        self._client = QdrantClient(host=host, port=port, check_compatibility=False)
 
     def ensure_collection(self) -> None:
         existing = {c.name for c in self._client.get_collections().collections}
@@ -56,12 +56,13 @@ class VectorStoreClient:
         )
 
     def search(self, tenant_id: str, query_vector: list[float], top_k: int = 5):
-        return self._client.search(
+        result = self._client.query_points(
             collection_name=COLLECTION_NAME,
-            query_vector=query_vector,
+            query=query_vector,
             query_filter=Filter(
                 must=[FieldCondition(key="tenant_id", match=MatchValue(value=tenant_id))]
             ),
             limit=top_k,
             with_payload=True,
         )
+        return result.points

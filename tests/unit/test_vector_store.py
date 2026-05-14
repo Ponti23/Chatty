@@ -45,7 +45,7 @@ def test_search_always_filters_by_tenant_id():
     client = make_client()
     client.search(TENANT_A, [0.1] * 768, top_k=5)
 
-    call_kwargs = client._client.search.call_args[1]
+    call_kwargs = client._client.query_points.call_args[1]
     filter_conditions = call_kwargs["query_filter"].must
     tenant_condition = next(f for f in filter_conditions if f.key == "tenant_id")
     assert tenant_condition.match.value == TENANT_A
@@ -56,7 +56,7 @@ def test_search_with_different_tenants_uses_different_filters():
     client.search(TENANT_A, [0.1] * 768, top_k=5)
     client.search(TENANT_B, [0.1] * 768, top_k=5)
 
-    calls = client._client.search.call_args_list
+    calls = client._client.query_points.call_args_list
     filter_a = next(f for f in calls[0][1]["query_filter"].must if f.key == "tenant_id")
     filter_b = next(f for f in calls[1][1]["query_filter"].must if f.key == "tenant_id")
     assert filter_a.match.value == TENANT_A
